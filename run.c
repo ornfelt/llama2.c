@@ -1,5 +1,22 @@
 /* Inference for Llama-2 Transformer model in pure C */
 
+// compile:
+// make run
+// or:
+// make runfast
+// or:
+// use cmake or build_msvc.bat
+
+// run:
+// linux example:
+// ./run ./out/model.bin
+// windows example(s):
+// .\llama2.exe C:/Users/jonas/Code/ml/llama2.c/stories15M.bin -n 256 -i "There was a boy named jonas"
+// .\llama2.exe C:/Users/jonas/Code/ml/llama2.c/out/model.bin -n 256 -i "There was a boy named jonas"
+// or:
+// .\llama2.exe D:/my_files/my_docs/ai/models/llama2.c/out/model.bin -n 256 -i "Once upon a time"
+// or use run.exe if compiled via build_msvc.bat
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <ctype.h>
@@ -903,6 +920,29 @@ void error_usage() {
     exit(EXIT_FAILURE);
 }
 
+// Helper function to check if file exists
+int file_exists(const char *path) {
+    #if defined _WIN32
+        return _access(path, 0) == 0;
+    #else
+        return access(path, F_OK) == 0;
+    #endif
+}
+
+// Helper function to get parent directory (modifies path in place)
+void get_parent_dir(char *path) {
+    // Find the last slash or backslash
+    char *last_slash = strrchr(path, '/');
+    char *last_backslash = strrchr(path, '\\');
+    
+    // Use whichever is later in the string
+    char *sep = (last_slash > last_backslash) ? last_slash : last_backslash;
+    
+    if (sep != NULL) {
+        *sep = '\0';  // Terminate at the separator
+    }
+}
+
 int main(int argc, char *argv[]) {
 
     // default parameters
@@ -917,7 +957,35 @@ int main(int argc, char *argv[]) {
     char *system_prompt = NULL; // the (optional) system prompt to use in chat mode
 
     // poor man's C argparse so we can override the defaults above from the command line
+#if 0
     if (argc >= 2) { checkpoint_path = argv[1]; } else { error_usage(); }
+#else
+	if (argc >= 2) {
+		checkpoint_path = argv[1];
+
+		// Check if default tokenizer exists, otherwise use parent directory of checkpoint
+		if (!file_exists(tokenizer_path) && checkpoint_path != NULL) {
+			static char tokenizer_buf[2048];
+			char checkpoint_dir[2048];
+
+			// Copy checkpoint path and get its parent directory (C:/path/out/model.bin" -> "C:/path/out")
+			strncpy(checkpoint_dir, checkpoint_path, sizeof(checkpoint_dir) - 1);
+			checkpoint_dir[sizeof(checkpoint_dir) - 1] = '\0';
+			get_parent_dir(checkpoint_dir);
+
+			get_parent_dir(checkpoint_dir);
+
+			snprintf(tokenizer_buf, sizeof(tokenizer_buf), "%s/tokenizer.bin", checkpoint_dir);
+			tokenizer_path = tokenizer_buf;
+
+			printf("Tokenizer not found at default path, using: %s\n", tokenizer_path);
+		}
+	}
+	else {
+		error_usage();
+	}
+#endif
+
     for (int i = 2; i < argc; i+=2) {
         // do some basic validation
         if (i + 1 >= argc) { error_usage(); } // must have arg after flag
