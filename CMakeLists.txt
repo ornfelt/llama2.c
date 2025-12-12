@@ -22,17 +22,23 @@ target_include_directories(llama2 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 # Set optimization flags based on compiler
 if(MSVC)
     # Fast floating point and maximum optimization (equivalent to /fp:fast /Ox)
-    target_compile_options(llama2 PRIVATE /fp:fast /Ox)
+    target_compile_options(llama2 PRIVATE 
+        $<$<CONFIG:Release>:/fp:fast /Ox>
+        $<$<CONFIG:Debug>:/Od> # Disable optimization for Debug
+    )
     
     # Alternative optimization levels:
-    #target_compile_options(llama2 PRIVATE /fp:fast /O2)  # Standard optimization
-    #target_compile_options(llama2 PRIVATE /fp:fast /O1)  # Minimize size
+    #target_compile_options(llama2 PRIVATE /fp:fast /O2) # Standard optimization
+    #target_compile_options(llama2 PRIVATE /fp:fast /O1) # Minimize size
 else()
     # GCC/Clang: Fast optimization (equivalent to /fp:fast /Ox)
-    target_compile_options(llama2 PRIVATE -Ofast)
+    target_compile_options(llama2 PRIVATE 
+        $<$<CONFIG:Release>:-Ofast>
+        $<$<CONFIG:Debug>:-O0 -g> # No optimization, but with debug symbols
+    )
     
     # Alternative optimization levels:
-    #target_compile_options(llama2 PRIVATE -O3)  # Aggressive optimization
-    #target_compile_options(llama2 PRIVATE -O2)  # Standard optimization
-    #target_compile_options(llama2 PRIVATE -O1)  # Basic optimization
+    #target_compile_options(llama2 PRIVATE -O3) # Aggressive optimization
+    #target_compile_options(llama2 PRIVATE -O2) # Standard optimization
+    #target_compile_options(llama2 PRIVATE -O1) # Basic optimization
 endif()
