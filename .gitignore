@@ -6,3 +6,5 @@ build/
 *.exe
 *.obj
 stories15M.bin
+run
+runq

@@ -11,10 +11,19 @@ project(llama2 C)
 find_package(OpenMP REQUIRED)
 
 # Add the executable
-add_executable(llama2 run.c win.c)
+#add_executable(llama2 run.c win.c)
+set(LLAMA2_SOURCES run.c)
+if(WIN32)
+  list(APPEND LLAMA2_SOURCES win.c)
+endif()
+add_executable(llama2 ${LLAMA2_SOURCES})
 
 # Link OpenMP
 target_link_libraries(llama2 PRIVATE OpenMP::OpenMP_C)
+# Linux/Unix: math functions (sqrtf/expf/etc)
+if(NOT MSVC)
+  target_link_libraries(llama2 PRIVATE m)
+endif()
 
 # Include current directory for headers
 target_include_directories(llama2 PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
